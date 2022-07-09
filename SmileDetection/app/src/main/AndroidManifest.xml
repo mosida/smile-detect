@@ -9,7 +9,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         >
 <!--        android:supportsRtl="true"-->
-<!--        android:theme="@style/Theme.SmileDetetcion"-->
+<!--        android:theme="@style/Theme.Smiledetection"-->
         <activity android:name="com.mosida.smiledetection.FdActivity"
             android:screenOrientation="landscape"
             android:configChanges="keyboardHidden|orientation">
