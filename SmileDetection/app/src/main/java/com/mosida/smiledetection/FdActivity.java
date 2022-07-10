@@ -1,11 +1,18 @@
 package com.mosida.smiledetection;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraActivity;
@@ -45,6 +52,8 @@ public class FdActivity extends CameraActivity implements CvCameraViewListener2 
     private Mat                    mRgba;
     private Mat                    mGray;
     private File mCascadeFile;
+    private File mSmileCascadeFile;
+    private File mFaceCascadeFile;
     private CascadeClassifier      mJavaDetector;
     private com.mosida.smiledetection.DetectionBasedTracker mNativeDetector;
 
@@ -69,10 +78,12 @@ public class FdActivity extends CameraActivity implements CvCameraViewListener2 
 
                     try {
                         // load cascade file from application resources
-                        InputStream is = getResources().openRawResource(R.raw.lbpcascade_frontalface);
+//                        InputStream is = getResources().openRawResource(R.raw.lbpcascade_frontalface);
+                        InputStream is = getResources().openRawResource(R.raw.haarcascade_frontalface_alt2);
                         File cascadeDir = getDir("cascade", Context.MODE_PRIVATE);
-                        mCascadeFile = new File(cascadeDir, "lbpcascade_frontalface.xml");
-                        FileOutputStream os = new FileOutputStream(mCascadeFile);
+//                        mCascadeFile = new File(cascadeDir, "lbpcascade_frontalface.xml");
+                        mFaceCascadeFile = new File(cascadeDir, "haarcascade_frontalface_alt2.xml");
+                        FileOutputStream os = new FileOutputStream(mFaceCascadeFile);
 
                         byte[] buffer = new byte[4096];
                         int bytesRead;
@@ -81,6 +92,28 @@ public class FdActivity extends CameraActivity implements CvCameraViewListener2 
                         }
                         is.close();
                         os.close();
+
+                        mCascadeFile = new File(cascadeDir, "lbpcascade_frontalface.xml");
+                        FileOutputStream os2 = new FileOutputStream(mCascadeFile);
+                        InputStream is2 = getResources().openRawResource(R.raw.lbpcascade_frontalface);
+                        byte[] buffer2 = new byte[4096];
+                        int bytesRead2;
+                        while ((bytesRead2 = is2.read(buffer2)) != -1) {
+                            os2.write(buffer2, 0, bytesRead2);
+                        }
+                        is2.close();
+                        os2.close();
+
+                        mSmileCascadeFile = new File(cascadeDir, "haarcascade_smile.xml");
+                        FileOutputStream os3 = new FileOutputStream(mSmileCascadeFile);
+                        InputStream is3 = getResources().openRawResource(R.raw.haarcascade_smile);
+                        byte[] buffer3 = new byte[4096];
+                        int bytesRead3;
+                        while ((bytesRead3 = is3.read(buffer3)) != -1) {
+                            os3.write(buffer3, 0, bytesRead3);
+                        }
+                        is3.close();
+                        os3.close();
 
                         mJavaDetector = new CascadeClassifier(mCascadeFile.getAbsolutePath());
                         if (mJavaDetector.empty()) {
@@ -116,6 +149,10 @@ public class FdActivity extends CameraActivity implements CvCameraViewListener2 
         Log.i(TAG, "Instantiated new " + this.getClass());
     }
 
+    private Button bu;
+    private ImageView vi;
+    private TextView tvi;
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -125,9 +162,49 @@ public class FdActivity extends CameraActivity implements CvCameraViewListener2 
 
         setContentView(R.layout.face_detect_surface_view);
 
+        init();
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.fd_activity_surface_view);
         mOpenCvCameraView.setVisibility(CameraBridgeViewBase.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
+    }
+
+    // 图片捕捉
+    private Handler handler ;
+    private int id = 0;
+    private String filePath;
+    private int pi = 0;
+    private Button bu1;
+    private int hd = 3;
+    @SuppressLint("HandlerLeak")
+    private void init() {
+        tvi = (TextView) findViewById(R.id.tv);
+        vi = (ImageView) findViewById(R.id.imageView);
+        bu = (Button) findViewById(R.id.button1);
+        bu1 = (Button) findViewById(R.id.button2);
+        handler = new Handler() {
+            @Override
+            public void handleMessage(Message msg) {
+                super.handleMessage(msg);
+                // 自动拍照并对比
+                hd = 3;
+            }
+        };
+        View.OnClickListener btnOnClick = new View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                // TODO Auto-generated method stub
+                switch (arg0.getId()) {
+                    case R.id.button1:
+                        //	id = 1;
+                        break;
+                    case R.id.button2:
+
+                        break;
+                }
+            }
+        };
+        bu.setOnClickListener(btnOnClick);
+        bu1.setOnClickListener(btnOnClick);
     }
 
     @Override
@@ -173,35 +250,46 @@ public class FdActivity extends CameraActivity implements CvCameraViewListener2 
 
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
 
+//        mRgba = inputFrame.rgba();
+//        mGray = inputFrame.gray();
+//
+//        if (mAbsoluteFaceSize == 0) {
+//            int height = mGray.rows();
+//            if (Math.round(height * mRelativeFaceSize) > 0) {
+//                mAbsoluteFaceSize = Math.round(height * mRelativeFaceSize);
+//            }
+//            mNativeDetector.setMinFaceSize(mAbsoluteFaceSize);
+//        }
+//
+//        MatOfRect faces = new MatOfRect();
+//
+//        if (mDetectorType == JAVA_DETECTOR) {
+//            if (mJavaDetector != null)
+//                mJavaDetector.detectMultiScale(mGray, faces, 1.1, 2, 2, // TODO: objdetect.CV_HAAR_SCALE_IMAGE
+//                        new Size(mAbsoluteFaceSize, mAbsoluteFaceSize), new Size());
+//        }
+//        else if (mDetectorType == NATIVE_DETECTOR) {
+//            if (mNativeDetector != null)
+//                mNativeDetector.detect(mGray, faces);
+//        }
+//        else {
+//            Log.e(TAG, "Detection method is not selected!");
+//        }
+//
+//        Rect[] facesArray = faces.toArray();
+//        for (int i = 0; i < facesArray.length; i++)
+//            Imgproc.rectangle(mRgba, facesArray[i].tl(), facesArray[i].br(), FACE_RECT_COLOR, 3);
+//
+//        return mRgba;
+
+        // 这里获取相机拍摄到的原图，彩色图
         mRgba = inputFrame.rgba();
+        // 这里获取相机拍摄到的灰度图，用来给下面检测人脸使用。
         mGray = inputFrame.gray();
 
-        if (mAbsoluteFaceSize == 0) {
-            int height = mGray.rows();
-            if (Math.round(height * mRelativeFaceSize) > 0) {
-                mAbsoluteFaceSize = Math.round(height * mRelativeFaceSize);
-            }
-            mNativeDetector.setMinFaceSize(mAbsoluteFaceSize);
-        }
-
-        MatOfRect faces = new MatOfRect();
-
-        if (mDetectorType == JAVA_DETECTOR) {
-            if (mJavaDetector != null)
-                mJavaDetector.detectMultiScale(mGray, faces, 1.1, 2, 2, // TODO: objdetect.CV_HAAR_SCALE_IMAGE
-                        new Size(mAbsoluteFaceSize, mAbsoluteFaceSize), new Size());
-        }
-        else if (mDetectorType == NATIVE_DETECTOR) {
-            if (mNativeDetector != null)
-                mNativeDetector.detect(mGray, faces);
-        }
-        else {
-            Log.e(TAG, "Detection method is not selected!");
-        }
-
-        Rect[] facesArray = faces.toArray();
-        for (int i = 0; i < facesArray.length; i++)
-            Imgproc.rectangle(mRgba, facesArray[i].tl(), facesArray[i].br(), FACE_RECT_COLOR, 3);
+        MatOfRect faces2 = new MatOfRect();
+        float sm =  mNativeDetector.data(mRgba, faces2);
+        Log.e("微笑强度-->", ""+sm);
 
         return mRgba;
     }

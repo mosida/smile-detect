@@ -38,4 +38,11 @@ public class DetectionBasedTracker
     private static native void nativeStop(long thiz);
     private static native void nativeSetFaceSize(long thiz, int size);
     private static native void nativeDetect(long thiz, long inputImage, long faces);
+
+    public float data(Mat imageGray, MatOfRect faces){
+        float data = 0;
+        data = nativateSmileData(mNativeObj, imageGray.getNativeObjAddr(), faces.getNativeObjAddr());
+        return data ;
+    }
+    private static native float nativateSmileData(long thiz, long inputImage, long faces);
 }

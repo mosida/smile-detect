@@ -55,6 +55,10 @@ JNIEXPORT void JNICALL Java_com_mosida_smiledetection_DetectionBasedTracker_nati
 JNIEXPORT void JNICALL Java_com_mosida_smiledetection_DetectionBasedTracker_nativeDetect
   (JNIEnv *, jclass, jlong, jlong, jlong);
 
+
+JNIEXPORT jfloat JNICALL Java_com_mosida_smiledetection_DetectionBasedTracker_nativateSmileData
+  (JNIEnv *, jclass, jlong, jlong, jlong);
+
 #ifdef __cplusplus
 }
 #endif

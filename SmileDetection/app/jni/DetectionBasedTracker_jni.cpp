@@ -1,14 +1,19 @@
 #include <DetectionBasedTracker_jni.h>
 #include <opencv2/core.hpp>
-#include <opencv2/objdetect.hpp>
-
+//#include <opencv2/contrib/detection_based_tracker.hpp>
 #include <string>
 #include <vector>
-
 #include <android/log.h>
+#include <iostream>
+#include <opencv2/opencv.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/objdetect.hpp>
 
 #define LOG_TAG "FaceDetection/DetectionBasedTracker"
 #define LOGD(...) ((void)__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__))
+#define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
 
 using namespace std;
 using namespace cv;
@@ -248,4 +253,94 @@ JNIEXPORT void JNICALL Java_com_mosida_smiledetection_DetectionBasedTracker_nati
         jenv->ThrowNew(je, "Unknown exception in JNI code DetectionBasedTracker.nativeDetect()");
     }
     LOGD("Java_com_mosida_smiledetection_DetectionBasedTracker_nativeDetect END");
+}
+
+JNIEXPORT jfloat JNICALL Java_com_mosida_smiledetection_DetectionBasedTracker_nativateSmileData(
+        JNIEnv * jenv, jclass, jlong thiz, jlong imageGray, jlong facess) {
+
+    Mat img;
+    Mat gray, smallImg;
+    double scale = 1;
+    bool tryflip = 0;
+    float smile_max = 0;
+    vector<Rect> faces, faces2;
+    img = *((Mat*) imageGray);
+    CascadeClassifier nestedCascade, cascade;
+    if (!cascade.load(
+            "/data/data/com.mosida.smiledetection/app_cascade/haarcascade_frontalface_alt2.xml")) { //分类器存放的位置
+        return 11;
+    }
+    if (!nestedCascade.load(
+            "/data/data/com.mosida.smiledetection/app_cascade/haarcascade_smile.xml")) { //分类器存放的位置
+        return 11;
+    }
+    const static Scalar colors[] = { Scalar(255, 0, 0), Scalar(255, 128, 0),
+                                     Scalar(255, 255, 0), Scalar(0, 255, 0), Scalar(0, 128, 255), Scalar(
+                    0, 255, 255), Scalar(0, 0, 255), Scalar(255, 0, 255) };
+    cvtColor(img, gray, COLOR_BGR2GRAY);
+
+    double fx = 1 / scale;
+    resize(gray, smallImg, Size(), fx, fx, INTER_LINEAR);
+    equalizeHist(smallImg, smallImg);
+
+    cascade.detectMultiScale(smallImg, faces, 1.1, 2, 0
+                                                      | CASCADE_SCALE_IMAGE, Size(30, 30));
+    if (tryflip)
+    {
+        flip(smallImg, smallImg, 1);
+        cascade.detectMultiScale(smallImg, faces2,
+                                 1.1, 2, 0
+                                         | CASCADE_SCALE_IMAGE,
+                                 Size(30, 30));
+        for (vector<Rect>::const_iterator r = faces2.begin(); r != faces2.end(); ++r)
+        {
+            faces.push_back(Rect(smallImg.cols - r->x - r->width, r->y, r->width, r->height));
+        }
+    }
+    for (size_t i = 0; i < faces.size(); i++) {
+        Rect r = faces[i];
+        Mat smallImgROI;
+        vector<Rect> nestedObjects; //微笑处理
+        Point center;
+        Scalar color = colors[i % 8];
+        int radius;
+
+        double aspect_ratio = (double) r.width / r.height;
+        if (0.75 < aspect_ratio && aspect_ratio < 1.3) {
+            center.x = cvRound((r.x + r.width * 0.5) * scale);
+            center.y = cvRound((r.y + r.height * 0.5) * scale);
+            radius = cvRound((r.width + r.height) * 0.25 * scale);
+            circle(img, center, radius, color, 3, 8, 0);
+        } else
+            // 备注：Don't mix the obsolete C api with the C++ api. Use cv::Point instead of cvPoint, and cv::FONT_HERSHEY_SIMPLEX instead of CV_FONT_HERSHEY_SIMPLEX
+            rectangle(img, cv::Point(cvRound(r.x * scale), cvRound(r.y * scale)),
+                      cv::Point(cvRound((r.x + r.width - 1) * scale),
+                              cvRound((r.y + r.height - 1) * scale)), color, 3, 8,
+                      0);
+
+        const int half_height = cvRound((float) r.height / 2);
+        r.y = r.y + half_height;
+        r.height = half_height - 1;
+        smallImgROI = smallImg(r);
+
+        //微笑处理&识别度
+        nestedCascade.detectMultiScale(smallImgROI, nestedObjects, 1.1, 0, 0
+                                                                           | CASCADE_SCALE_IMAGE, Size(30, 30));
+        // The number of detected neighbors depends on image size (and also illumination, etc.). The
+        // following steps use a floating minimum and maximum of neighbors. Intensity thus estimated will be
+        //accurate only after a first smile has been displayed by the user.
+        const int smile_neighbors = (int) nestedObjects.size();
+        static int max_neighbors = -1;
+        static int min_neighbors = -1;
+        if (min_neighbors == -1)
+            min_neighbors = smile_neighbors;
+        max_neighbors = MAX(max_neighbors, smile_neighbors);
+
+        // Draw rectangle on the left side of the image reflecting smile intensity
+        float intensityZeroOne = ((float) smile_neighbors - min_neighbors)
+                                 / (max_neighbors - min_neighbors + 1);
+        smile_max = intensityZeroOne;
+    }
+    LOGE("jni_smile_ok_->3");
+    return (jfloat) smile_max;
 }
