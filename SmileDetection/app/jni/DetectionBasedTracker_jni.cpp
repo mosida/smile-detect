@@ -305,13 +305,13 @@ JNIEXPORT jfloat JNICALL Java_com_mosida_smiledetection_DetectionBasedTracker_na
         Scalar color = colors[i % 8];
         int radius;
 
-        double aspect_ratio = (double) r.width / r.height;
-        if (0.75 < aspect_ratio && aspect_ratio < 1.3) {
-            center.x = cvRound((r.x + r.width * 0.5) * scale);
-            center.y = cvRound((r.y + r.height * 0.5) * scale);
-            radius = cvRound((r.width + r.height) * 0.25 * scale);
-            circle(img, center, radius, color, 3, 8, 0);
-        } else
+//        double aspect_ratio = (double) r.width / r.height;
+//        if (0.75 < aspect_ratio && aspect_ratio < 1.3) {
+//            center.x = cvRound((r.x + r.width * 0.5) * scale);
+//            center.y = cvRound((r.y + r.height * 0.5) * scale);
+//            radius = cvRound((r.width + r.height) * 0.25 * scale);
+//            circle(img, center, radius, color, 3, 8, 0);
+//        } else
             // 备注：Don't mix the obsolete C api with the C++ api. Use cv::Point instead of cvPoint, and cv::FONT_HERSHEY_SIMPLEX instead of CV_FONT_HERSHEY_SIMPLEX
             rectangle(img, cv::Point(cvRound(r.x * scale), cvRound(r.y * scale)),
                       cv::Point(cvRound((r.x + r.width - 1) * scale),
@@ -340,6 +340,13 @@ JNIEXPORT jfloat JNICALL Java_com_mosida_smiledetection_DetectionBasedTracker_na
         float intensityZeroOne = ((float) smile_neighbors - min_neighbors)
                                  / (max_neighbors - min_neighbors + 1);
         smile_max = intensityZeroOne;
+        for (size_t j = 0; j < smile_neighbors; ++j) {
+//            Rect rect(faces[i].x + nestedObjects[j].x, faces[i].y + nestedObjects[j].y,
+//                      nestedObjects[j].width, nestedObjects[j].height);
+//            rectangle(img, rect, Scalar(0, 0, 255), 2, 8, 0);
+            putText(img, "Smiling", Point(faces[i].x, faces[i].y), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0, 255),
+                    4);
+        }
     }
     LOGE("jni_smile_ok_->3");
     return (jfloat) smile_max;
