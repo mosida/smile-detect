@@ -28,6 +28,7 @@
             android:layout_alignParentBottom="true"
             android:layout_alignRight="@+id/imageView"
             android:layout_marginBottom="40dp"
+            android:visibility="gone"
             android:text="截取的图片" />
 
         <Button
@@ -37,6 +38,7 @@
             android:layout_alignBottom="@+id/button1"
             android:layout_alignParentRight="true"
             android:layout_marginRight="51dp"
+            android:visibility="gone"
             android:text="遍历   图片" />
 
         <TextView

@@ -340,12 +340,19 @@ JNIEXPORT jfloat JNICALL Java_com_mosida_smiledetection_DetectionBasedTracker_na
         float intensityZeroOne = ((float) smile_neighbors - min_neighbors)
                                  / (max_neighbors - min_neighbors + 1);
         smile_max = intensityZeroOne;
+
+        // 添加 Smile 标志
         for (size_t j = 0; j < smile_neighbors; ++j) {
 //            Rect rect(faces[i].x + nestedObjects[j].x, faces[i].y + nestedObjects[j].y,
 //                      nestedObjects[j].width, nestedObjects[j].height);
 //            rectangle(img, rect, Scalar(0, 0, 255), 2, 8, 0);
-            putText(img, "Smiling", Point(faces[i].x, faces[i].y), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0, 255),
-                    4);
+            if(smile_max<0){
+
+            }else{
+                putText(img, "Smile", Point(faces[i].x, faces[i].y), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0, 255),
+                        4);
+            }
+
         }
     }
     LOGE("jni_smile_ok_->3");
